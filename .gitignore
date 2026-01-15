@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+web_app/node_modules/
+web_app/dist/
+web_app/.vite/
+downloads/
+generated/
+uploads/
+*.mp4
+*.mp3
