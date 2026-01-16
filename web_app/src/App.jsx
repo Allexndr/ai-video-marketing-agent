@@ -5,7 +5,7 @@ import {
   Wand2, Settings, Download, Film, Music, Loader2
 } from 'lucide-react';
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = import.meta.env.PROD ? "" : "http://127.0.0.1:8000";
 
 function App() {
   // State

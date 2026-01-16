@@ -1,0 +1,8 @@
+{
+    "name": "video-aggregator",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "cd web_app && npm install && npm run build && mkdir -p ../dist && cp -r dist/* ../dist",
+        "install-web": "cd web_app && npm install"
+    }
+}
