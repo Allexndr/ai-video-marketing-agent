@@ -4,3 +4,6 @@ requests
 python-dotenv
 pydantic
 python-multipart
+huggingface_hub
+edge-tts
+pyjwt

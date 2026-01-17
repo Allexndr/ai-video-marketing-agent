@@ -6,8 +6,9 @@ import asyncio
 import base64
 from dotenv import load_dotenv
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from browser_use import Agent, Browser
+# Lazy imports for optional browser agent
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# from browser_use import Agent, Browser
 
 load_dotenv()
 
@@ -106,6 +107,14 @@ async def run_kling_agent(prompt: str, image_path: str):
 
     # --- METHOD 2: BROWSER AGENT (FALLBACK) ---
     print("\n🤖 Launching Browser Agent...")
+    
+    try:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from browser_use import Agent, Browser
+    except ImportError:
+        print("⚠️ Browser Agent dependencies not installed. Skipping fallback.")
+        return None
+
     api_key = os.getenv('GOOGLE_API_KEY')
     
     llm = ChatGoogleGenerativeAI(
@@ -130,12 +139,10 @@ async def run_kling_agent(prompt: str, image_path: str):
     """
     
     try:
-        # Trying without 'config' argument if it was the issue, or passing simple arguments
-        # If Browser(headless=False) fails, we'll try minimal init
+        # Trying standard Browser initialization
         agent = Agent(
             task=task,
             llm=llm,
-            # Trying standard Browser initialization, hoping for the best with current version
             browser=Browser() 
         )
         
