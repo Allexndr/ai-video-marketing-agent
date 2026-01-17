@@ -54,7 +54,7 @@ function App() {
       });
       setGeneratedVideo(res.data);
     } catch (e) {
-      alert("Failed to generate video (or agent exhausted): " + e.message);
+      alert("Failed to generate video: " + (e.response?.data?.detail || e.message));
     }
     setLoadingVideo(false);
   };
