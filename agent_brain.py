@@ -54,13 +54,15 @@ async def run_kling_agent(prompt: str, image_path: str):
         if not os.path.exists(image_path):
              raise FileNotFoundError(f"Source image not found at {image_path}")
 
-        base64_img = f"data:image/jpeg;base64,{encode_image(image_path)}"
+        # Kling API expects raw base64 string, usually without the data URI prefix
+        # or checks the content. Let's send raw base64 first.
+        base64_img = encode_image(image_path)
         
         payload = {
             "model_name": "kling-v1", 
             "prompt": prompt,
             "image": base64_img, 
-            "duration": 5 # Short duration for faster testing/lower cost
+            "duration": 5 
         }
         
         headers = {
