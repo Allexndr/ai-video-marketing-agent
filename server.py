@@ -39,60 +39,34 @@ class ImageRequest(BaseModel):
 
 class VideoRequest(BaseModel):
     prompt: str
-    image_path: str
+    image_path: Optional[str] = None
+    image_base64: Optional[str] = None
     duration: int = 5
-
-class AudioRequest(BaseModel):
-    text: str
-    type: str = "voice" # 'voice' or 'sfx'
-
-@app.get("/api/health")
-async def health():
-    return {"status": "ok", "storage": BASE_DIR}
-
-@app.get("/")
-async def root():
-    return {"status": "AI Studio Backend Running"}
-
-# --- File Serving Endpoints ---
-@app.get("/api/files/{category}/{filename}")
-async def get_file(category: str, filename: str):
-    """Serve files from the temp directories"""
-    if category == "downloads":
-        file_path = os.path.join(DOWNLOADS_DIR, filename)
-    elif category == "generated":
-        file_path = os.path.join(GENERATED_DIR, filename)
-    elif category == "uploads":
-        file_path = os.path.join(UPLOADS_DIR, filename)
-    else:
-        raise HTTPException(status_code=400, detail="Invalid category")
-
-    if os.path.exists(file_path):
-        return FileResponse(file_path)
-    raise HTTPException(status_code=404, detail="File not found")
-
-
-@app.post("/api/generate-image")
-async def api_generate_image(req: ImageRequest):
-    try:
-        filename = f"img_{int(time.time())}.jpg"
-        abs_path = os.path.join(GENERATED_DIR, filename)
-        
-        result = generate_image(req.prompt, abs_path)
-        if result:
-            # Return URL that points to our serving endpoint
-            return {"url": f"/api/files/generated/{filename}", "path": abs_path}
-        else:
-            raise HTTPException(status_code=500, detail="Image generation failed")
-    except Exception as e:
-        print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate-video")
 async def api_generate_video(req: VideoRequest):
     try:
+        # Handle Base64 input (Stateless / Vercel compatible)
+        if req.image_base64:
+            # Create a temp file for the agent to use
+            temp_filename = f"temp_source_{int(time.time())}.jpg"
+            temp_path = os.path.join(GENERATED_DIR, temp_filename)
+            
+            # Remove header if present
+            b64_data = req.image_base64
+            if "," in b64_data:
+                b64_data = b64_data.split(",")[1]
+                
+            with open(temp_path, "wb") as f:
+                f.write(base64.b64decode(b64_data))
+            
+            req.image_path = temp_path
+            
         # Note: run_kling_agent might fail on Vercel if it tries to use Browser (no browser installed).
         # It relies on specific keys being present for API usage.
+        if not req.image_path or not os.path.exists(req.image_path):
+             raise HTTPException(status_code=400, detail=f"Source image not found at {req.image_path}")
+
         video_path = await run_kling_agent(req.prompt, req.image_path)
         
         if not video_path:

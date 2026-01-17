@@ -40,6 +40,8 @@ function App() {
   const handleNavigateVideo = async () => {
     // Determine source image
     const imgSource = uploadedImage?.path || generatedImage?.path;
+    let imgBase64 = null;
+
     if (!imgSource) {
       alert("Please generate or upload an image first!");
       return;
@@ -47,9 +49,30 @@ function App() {
 
     setLoadingVideo(true);
     try {
+      // On Vercel (Production), we cannot rely on local file paths persisting between requests.
+      // We must send the image data itself (base64).
+      // If we have a URL (from generatedImage.url or uploadedImage), fetch it and convert.
+
+      const imgUrl = uploadedImage?.url || generatedImage?.url;
+      if (imgUrl) {
+        // It's a URL (either /api/files/... or a blob/data URI)
+        // Fetch it to get the blob
+        const response = await fetch(imgUrl);
+        const blob = await response.blob();
+        // Convert to base64
+        imgBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } else if (imgSource.startsWith('data:')) {
+        imgBase64 = imgSource;
+      }
+
       const res = await axios.post(`${API_URL}/api/generate-video`, {
         prompt: videoPrompt,
-        image_path: imgSource,
+        image_path: imgSource, // Keep for localhost fallback
+        image_base64: imgBase64, // New field for Vercel
         duration: 10
       });
       setGeneratedVideo(res.data);
